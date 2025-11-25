@@ -1,0 +1,33 @@
+[workspace]
+members = [
+    "html_view",
+    "html_view_shared",
+    "html_view_app",
+    "html_view_cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["Jack Geraghty (jmg049) <jgeraghty049@gmail.com>"]
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.6", features = ["v4", "serde"] }
+url = { version = "2.5", features = ["serde"] }
+thiserror = "2.0.12"
+anyhow = "1.0.100"
+tauri = "2.0"
+clap = { version = "4.4", features = ["derive"] }
+
+
+[profile.release]
+opt-level = 3
+lto = true
+panic = "abort"
+codegen-units = 1
+debug = false
+strip = true

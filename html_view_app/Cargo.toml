@@ -1,0 +1,21 @@
+[package]
+name = "html_view_app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+html_view_shared = { path = "../html_view_shared" }
+tauri.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+url.workspace = true
+base64 = "0.22"
+tauri-plugin-dialog = "2.4.2"
+tauri-plugin-notification = "2.3.3"
+tauri-plugin-cli = "2.4.1"
+
+[build-dependencies]
+tauri-build = "2.0"
