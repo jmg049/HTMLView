@@ -64,8 +64,10 @@ pub fn show<S: Into<String>>(html: S) -> Result<(), ViewerError> {
     }
 }
 
-
-pub fn show_with_options<S: Into<String>>(html: S, window_options: WindowOptions) -> Result<(), ViewerError> {
+pub fn show_with_options<S: Into<String>>(
+    html: S,
+    window_options: WindowOptions,
+) -> Result<(), ViewerError> {
     let mut options = ViewerOptions::inline_html(html);
     options.window = window_options;
 

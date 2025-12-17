@@ -117,10 +117,7 @@ fn show_message_dialog(
     message: String,
 ) {
     if state.dialog.allow_message_dialogs {
-        app.dialog()
-            .message(message)
-            .title(title)
-            .show(|_| {});
+        app.dialog().message(message).title(title).show(|_| {});
     }
 }
 
@@ -134,13 +131,10 @@ async fn show_open_dialog(
     }
 
     // Use blocking API which is simpler for this use case
-    let file_path = app.dialog()
-        .file()
-        .blocking_pick_file();
-    
+    let file_path = app.dialog().file().blocking_pick_file();
+
     Ok(file_path.map(|fp| fp.to_string()))
 }
-
 
 /// Configure the window based on WindowOptions.
 fn configure_window(window: &WebviewWindow, options: &WindowOptions) -> Result<()> {
@@ -187,10 +181,10 @@ fn configure_window(window: &WebviewWindow, options: &WindowOptions) -> Result<(
     window.set_always_on_top(options.always_on_top)?;
 
     // Set background color if provided
-    // Note: Transparency requires window creation flag in Tauri v1, 
+    // Note: Transparency requires window creation flag in Tauri v1,
     // but in v2 we can set it here if the window was created with transparency support.
     // For now we'll rely on the main window creation config in tauri.conf.json being permissive.
-    
+
     // Note: Theme handling is platform specific and often requires restart or initial config,
     // skipping dynamic theme update for now as it's complex in Tauri 2.0 without plugins.
 

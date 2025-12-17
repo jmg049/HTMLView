@@ -106,10 +106,15 @@ fn main() -> anyhow::Result<()> {
             html: html.to_string(),
             base_dir: None,
         },
-        Commands::File { path } => ViewerContent::LocalFile { path : path.to_path_buf() },
-        Commands::Dir { root, entry } => ViewerContent::AppDir { root: root.to_path_buf(), entry: entry.to_owned() },
+        Commands::File { path } => ViewerContent::LocalFile {
+            path: path.to_path_buf(),
+        },
+        Commands::Dir { root, entry } => ViewerContent::AppDir {
+            root: root.to_path_buf(),
+            entry: entry.to_owned(),
+        },
         Commands::Url { url } => ViewerContent::RemoteUrl {
-            url: Url::parse(&url)?,
+            url: Url::parse(url)?,
         },
     };
 
@@ -126,15 +131,15 @@ fn main() -> anyhow::Result<()> {
     if let Some(title) = cli.title {
         window.title = Some(title);
     }
-    
+
     if cli.no_decorations {
         window.decorations = false;
     }
-    
+
     if cli.transparent {
         window.transparent = true;
     }
-    
+
     if cli.always_on_top {
         window.always_on_top = true;
     }

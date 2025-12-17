@@ -1,6 +1,6 @@
-use std::fs;
-use std::env;
 use html_view::AppLocator;
+use std::env;
+use std::fs;
 
 /// Integration test that verifies the DefaultAppLocator will find a viewer
 /// binary in a `target/debug` directory when invoked from a project root.

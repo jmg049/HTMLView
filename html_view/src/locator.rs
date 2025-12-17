@@ -59,8 +59,8 @@ impl AppLocator for DefaultAppLocator {
         }
 
         // 4. Check in the same directory as the current executable
-        if let Ok(exe_path) = std::env::current_exe() {
-            if let Some(exe_dir) = exe_path.parent() {
+        if let Ok(exe_path) = std::env::current_exe()
+            && let Some(exe_dir) = exe_path.parent() {
                 let binary_name = if cfg!(target_os = "windows") {
                     "html_view_app.exe"
                 } else {
@@ -72,7 +72,6 @@ impl AppLocator for DefaultAppLocator {
                     return Ok(candidate);
                 }
             }
-        }
 
         // 5. Check in target directory (for development/testing)
         if let Ok(current_dir) = std::env::current_dir() {

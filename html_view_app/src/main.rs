@@ -33,8 +33,8 @@ fn main() -> anyhow::Result<()> {
     // instead simulate a viewer run. This allows CI to execute the binary
     // in headless environments for smoke tests.
     if std::env::var("HTML_VIEW_CI_FAKE").is_ok() {
-        use std::time::Duration;
         use std::thread::sleep;
+        use std::time::Duration;
 
         let timeout = request.environment.timeout_seconds.unwrap_or(0);
         if timeout > 0 {

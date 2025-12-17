@@ -36,11 +36,13 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
                 load_inline_html(window, &final_html)?;
             } else {
                 // Use file URL to ensure relative paths (images, css) work correctly
-                let abs_path = std::fs::canonicalize(path)
-                    .context("Failed to canonicalize file path")?;
+                let abs_path =
+                    std::fs::canonicalize(path).context("Failed to canonicalize file path")?;
                 let url = Url::from_file_path(&abs_path)
                     .map_err(|_| anyhow::anyhow!("Invalid file path {:?}", abs_path))?;
-                window.navigate(url).context("Failed to navigate to local file")?;
+                window
+                    .navigate(url)
+                    .context("Failed to navigate to local file")?;
             }
         }
         ViewerContent::AppDir { root, entry } => {
@@ -48,9 +50,12 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
             let full_path = root.join(entry_file);
 
             if let Some(toolbar) = &toolbar_html {
-                let content = std::fs::read_to_string(&full_path).context("Failed to read app entry file")?;
-                let root = std::fs::canonicalize(root).context("Failed to canonicalize app root")?;
-                let base_url = Url::from_file_path(root).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let content =
+                    std::fs::read_to_string(&full_path).context("Failed to read app entry file")?;
+                let root =
+                    std::fs::canonicalize(root).context("Failed to canonicalize app root")?;
+                let base_url =
+                    Url::from_file_path(root).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
                 let final_html = inject_into_html(&content, toolbar, Some(base_url.as_str()));
                 load_inline_html(window, &final_html)?;
             } else {
@@ -58,7 +63,9 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
                     .context("Failed to canonicalize app entry file path")?;
                 let url = Url::from_file_path(&abs_path)
                     .map_err(|_| anyhow::anyhow!("Invalid file path {:?}", abs_path))?;
-                window.navigate(url).context("Failed to navigate to app entry file")?;
+                window
+                    .navigate(url)
+                    .context("Failed to navigate to app entry file")?;
             }
         }
         ViewerContent::RemoteUrl { url } => {
@@ -115,9 +122,7 @@ fn load_inline_html(window: &WebviewWindow, html: &str) -> Result<()> {
     // robust for large payloads.
     match Url::parse(&data_url) {
         Ok(url) => {
-            window
-                .navigate(url)
-                .context("Failed to load HTML")?;
+            window.navigate(url).context("Failed to load HTML")?;
         }
         Err(_) => {
             // Use JavaScript to write the decoded HTML into the document.
@@ -217,4 +222,3 @@ fn inject_into_html(html: &str, toolbar: &str, base_url: Option<&str>) -> String
 
     result
 }
-

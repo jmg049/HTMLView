@@ -136,6 +136,7 @@ impl Default for WindowOptions {
 
 /// Toolbar configuration options.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct ToolbarOptions {
     /// Whether to show the custom toolbar.
     pub show: bool,
@@ -153,17 +154,6 @@ pub struct ToolbarOptions {
     pub buttons: Vec<ToolbarButton>,
 }
 
-impl Default for ToolbarOptions {
-    fn default() -> Self {
-        Self {
-            show: false,
-            title_text: None,
-            background_color: None,
-            text_color: None,
-            buttons: Vec::new(),
-        }
-    }
-}
 
 /// A button in the custom toolbar.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -180,6 +170,7 @@ pub struct ToolbarButton {
 
 /// Behaviour and security configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct BehaviourOptions {
     /// Whether navigation away from the initial content is allowed.
     pub allow_external_navigation: bool,
@@ -198,39 +189,22 @@ pub struct BehaviourOptions {
     pub allow_notifications: bool,
 }
 
-impl Default for BehaviourOptions {
-    fn default() -> Self {
-        Self {
-            allow_external_navigation: false,
-            allowed_domains: None,
-            enable_devtools: false,
-            allow_remote_content: false,
-            allow_notifications: false,
-        }
-    }
-}
 
 /// Dialog configuration options.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct DialogOptions {
     /// Whether file dialogs are allowed.
     pub allow_file_dialogs: bool,
-    
+
     /// Whether message dialogs are allowed.
     pub allow_message_dialogs: bool,
 }
 
-impl Default for DialogOptions {
-    fn default() -> Self {
-        Self {
-            allow_file_dialogs: false,
-            allow_message_dialogs: false,
-        }
-    }
-}
 
 /// Environment and runtime configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct EnvironmentOptions {
     /// Optional working directory for resolving relative paths.
     pub working_dir: Option<PathBuf>,
@@ -239,14 +213,6 @@ pub struct EnvironmentOptions {
     pub timeout_seconds: Option<u64>,
 }
 
-impl Default for EnvironmentOptions {
-    fn default() -> Self {
-        Self {
-            working_dir: None,
-            timeout_seconds: None,
-        }
-    }
-}
 
 /// Exit status returned by the viewer application.
 #[derive(Debug, Clone, Serialize, Deserialize)]

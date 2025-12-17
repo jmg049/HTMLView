@@ -234,7 +234,10 @@ impl ViewerOptionsBuilder {
     }
 
     /// Open the viewer with inline HTML content.
-    pub fn show_html<S: Into<String>>(mut self, html: S) -> Result<crate::ViewerResult, crate::ViewerError> {
+    pub fn show_html<S: Into<String>>(
+        mut self,
+        html: S,
+    ) -> Result<crate::ViewerResult, crate::ViewerError> {
         self.options.content = ViewerContent::InlineHtml {
             html: html.into(),
             base_dir: None,
@@ -246,9 +249,9 @@ impl ViewerOptionsBuilder {
 impl Default for ViewerOptions {
     fn default() -> Self {
         Self {
-            content: ViewerContent::InlineHtml { 
-                html: String::new(), 
-                base_dir: None 
+            content: ViewerContent::InlineHtml {
+                html: String::new(),
+                base_dir: None,
             },
             window: WindowOptions::default(),
             behaviour: BehaviourOptions::default(),

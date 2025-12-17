@@ -3,9 +3,6 @@
   "productName": "html_view_app",
   "version": "0.1.0",
   "identifier": "com.html-view.app",
-  "build": {
-    "frontendDist": "./dist"
-  },
   "bundle": {},
   "app": {
     "windows": [
