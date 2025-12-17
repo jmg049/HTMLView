@@ -1,60 +1,44 @@
 # html_view
 
-A lightweight, cross-platform HTML viewer library for Rust, providing a simple API similar to `matplotlib.pyplot.show()` in Python.
+A lightweight, cross-platform HTML viewer for Rust.
 
-## Features
+`html_view` provides a minimal, ergonomic API for rendering HTML content in a native window, similar in spirit to `matplotlib.pyplot.show()` for visualisation rather than UI development.
 
-- 🪟 **Simple API**: Display HTML with a single function call
-- 🎨 **Multiple Content Types**: Inline HTML, local files, directories, and remote URLs
-- ⚡ **Blocking & Non-blocking**: Choose between blocking and async modes
-- 🔒 **Secure by Default**: Remote content disabled, navigation restricted
-- 🖥️ **Cross-platform**: Windows (WebView2), macOS (WKWebView), Linux (WebKitGTK)
-- ⚙️ **Configurable**: Window size, position, timeout, and security options
+It is intended for debugging, inspection, and lightweight display, not for building full desktop applications.
 
-## Installation
+## What This Is (and Is Not)
 
-### For Library Use (Rust Projects)
+**html_view is:**
 
-First, install the viewer application globally:
+* A quick way to render HTML from Rust
+* Useful for visualisation, debugging, reports, and local tools
+* Designed to require minimal setup and minimal code
 
-```bash
-cargo install --path html_view_app
-```
+**html_view is not:**
 
-This installs `html_view_app` to `~/.cargo/bin/`, making it available system-wide and persistent across `cargo clean` operations.
+* A GUI framework
+* A browser replacement
+* A long-lived embedded webview inside your process
+* A solution for complex application state or interaction
 
-Then add the library to your `Cargo.toml`:
+If you need a full application framework, use Tauri, egui, iced, or a native GUI toolkit directly.
 
-```toml
-[dependencies]
-html_view = { path = "path/to/html_view" }
-```
+## Architecture
 
-Or if published to crates.io:
+`html_view` works by launching a small, native Tauri application as a **separate process** and sending it instructions over a simple JSON-based protocol.
 
-```toml
-[dependencies]
-html_view = "0.1"
-```
+This design:
 
-### For CLI Use (Command Line)
+* Keeps your Rust process lightweight and isolated
+* Avoids embedding webview state or event loops
+* Allows blocking or non-blocking execution
+* Makes failures and crashes contained and debuggable
 
-If you just want to use the command-line tool without writing Rust code:
-
-```bash
-# Install both the app and CLI
-cargo install --path html_view_app
-cargo install --path html_view_cli
-
-# Now you can use it directly
-html_view_cli html "<h1>Hello!</h1>"
-```
-
-See [CLI Usage](#cli-usage) section below for details.
+You install the viewer once, then reuse it across projects.
 
 ## Quick Start
 
-Display HTML:
+Render inline HTML with a single call:
 
 ```rust
 use html_view;
@@ -65,18 +49,47 @@ fn main() -> Result<(), html_view::ViewerError> {
 }
 ```
 
-## Usage Examples
+## Core Features
 
-### Simple HTML
+* Minimal, single-function API
+* Supports inline HTML, local files, application directories, and URLs
+* Blocking or non-blocking execution modes
+* Secure defaults with explicit opt-in for remote content
+* Cross-platform native rendering
+* Runtime configuration for window behaviour and lifecycle
+
+## Installation
+
+At runtime, `html_view` requires the viewer application binary.
+
+Install it once:
+
+```bash
+cargo install html_view_app
+```
+
+This installs the viewer into `~/.cargo/bin`.
+
+### Optional: Command-Line Tool
+
+If you want to use the viewer without writing Rust code:
+
+```bash
+cargo install html_view_cli
+```
+
+## Usage Patterns
+
+### Inline HTML
 
 ```rust
 html_view::show("<h1>Hello!</h1><p>Simple HTML display</p>")?;
 ```
 
-### Custom Window Configuration
+### Configurable Window
 
 ```rust
-use html_view::{ViewerOptions, WindowOptions};
+use html_view::ViewerOptions;
 
 let mut options = ViewerOptions::inline_html("<h1>Custom Window</h1>");
 options.window.width = Some(800);
@@ -86,7 +99,7 @@ options.window.title = Some("My App".to_string());
 html_view::open(options)?;
 ```
 
-### Non-blocking Mode
+### Non-blocking Execution
 
 ```rust
 use html_view::{ViewerOptions, ViewerWaitMode, ViewerResult};
@@ -96,244 +109,175 @@ options.wait = ViewerWaitMode::NonBlocking;
 
 match html_view::open(options)? {
     ViewerResult::NonBlocking(mut handle) => {
-        // Do other work while viewer is open
-        println!("Viewer is open, doing other work...");
-        
-        // Wait for it to close
+        // Do other work here
         let status = handle.wait()?;
-        println!("Closed: {:?}", status.reason);
+        println!("Viewer closed: {:?}", status.reason);
     }
     _ => unreachable!(),
 }
 ```
 
-### Local HTML File
+### Files, Directories, and URLs
 
 ```rust
-use std::path::PathBuf;
-
-let options = ViewerOptions::local_file(PathBuf::from("index.html"));
-html_view::open(options)?;
+ViewerOptions::local_file("index.html".into());
+ViewerOptions::app_dir("./dist".into());
+ViewerOptions::remote_url("https://example.com".parse()?);
 ```
 
-### HTML Application Directory
+Remote URLs require explicit permission, see Security below.
 
-```rust
-use std::path::PathBuf;
-
-let options = ViewerOptions::app_dir(PathBuf::from("./dist"));
-html_view::open(options)?;
-```
-
-### Remote URL (with caution)
-
-```rust
-use url::Url;
-
-let options = ViewerOptions::remote_url(Url::parse("https://example.com")?);
-html_view::open(options)?;
-```
-
-### Timeout
+### Time-Limited Display
 
 ```rust
 let mut options = ViewerOptions::inline_html("<h1>Auto-close</h1>");
-options.environment.timeout_seconds = Some(5); // Close after 5 seconds
+options.environment.timeout_seconds = Some(5);
+
 html_view::open(options)?;
 ```
 
-## Architecture
-
-This library is a Cargo workspace with four crates:
-
-- **`html_view`**: Public API library (what you import)
-- **`html_view_shared`**: Shared protocol types
-- **`html_view_app`**: Tauri 2.0 application binary (installed globally)
-- **`html_view_cli`**: Optional CLI tool
-
-The API crate spawns the Tauri app as a subprocess and communicates via JSON files.
-
-## Building from Source
-
-Build all crates:
-
-```bash
-cargo build --workspace
-```
-
-Install the app globally:
-
-```bash
-cargo install --path html_view_app
-```
-
-Run examples:
-
-```bash
-# Simple blocking example
-cargo run --package html_view --example simple
-
-# Advanced non-blocking example
-cargo run --package html_view --example advanced
-
-# Timeout example
-cargo run --package html_view --example timeout
-```
-
-## CLI Usage
-
-The CLI tool provides a command-line interface for displaying HTML without writing Rust code.
-
-### Installation
-
-Install both the viewer app and CLI globally:
-
-```bash
-# Install the viewer application (required)
-cargo install --path html_view_app
-
-# Install the CLI tool
-cargo install --path html_view_cli
-```
-
-Both binaries will be installed to `~/.cargo/bin/` (which should be in your PATH).
-
-### Usage
-
-Once installed, use the `html_view_cli` command directly:
-
-```bash
-# Display inline HTML
-html_view_cli html "<h1>Hello, World!</h1>"
-
-# Display a local HTML file
-html_view_cli file index.html
-
-# Display an HTML application directory
-html_view_cli dir ./dist
-
-# Display a remote URL
-html_view_cli url https://example.com
-
-# Customize the window
-html_view_cli html "<h1>Custom Window</h1>" \
-  --width 800 \
-  --height 600 \
-  --title "My App"
-
-# Enable devtools for debugging
-html_view_cli file debug.html --devtools
-
-# Auto-close after 10 seconds
-html_view_cli html "<h1>Temporary</h1>" --timeout 10
-```
-
-### CLI Command Reference
-
-**Subcommands:**
-- `html <html-string>` - Display inline HTML
-- `file <path>` - Display a local HTML file
-- `dir <root> [--entry <file>]` - Display an HTML application directory
-- `url <url>` - Display a remote URL (requires network access)
-
-**Global Options:**
-- `--width <pixels>` - Set window width
-- `--height <pixels>` - Set window height  
-- `--title <string>` - Set window title
-- `--devtools` - Enable developer tools
-- `--timeout <seconds>` - Auto-close after N seconds
-
-### Examples
-
-```bash
-# Quick visualization of data
-echo "<table><tr><td>Data</td></tr></table>" | \
-  html_view_cli html "$(cat -)"
-
-# View build output
-html_view_cli file target/doc/my_crate/index.html --devtools
-
-# Preview a web app
-html_view_cli dir ./frontend/dist --entry index.html
-
-# Display with custom styling
-html_view_cli html "<h1 style='color: blue;'>Styled</h1>" \
-  --width 400 --height 300
-```
-
-## Troubleshooting
-
-### Binary Not Found Error
-
-If you get an error about `html_view_app` not being found:
-
-```bash
-# Install the binary globally
-cargo install --path html_view_app
-
-# Or set the path manually
-export HTML_VIEW_APP_PATH=/path/to/html_view_app
-```
-
-The locator checks these locations in order:
-1. Compile-time embedded path (if built with build.rs)
-2. `HTML_VIEW_APP_PATH` environment variable
-3. `~/.cargo/bin/html_view_app` (cargo install location)
-4. Same directory as your executable
-5. `target/debug/` and `target/release/` directories
-
 ## Security
 
-By default, the viewer is configured securely:
+By default:
 
-- ❌ Remote content disabled
-- ❌ External navigation disabled
-- ❌ Devtools disabled
-- ✅ Only displays the content you explicitly provide
+* Remote content is disabled
+* External navigation is blocked
+* Developer tools are disabled
+* Only provided content is rendered
 
-To enable remote content or navigation, you must explicitly configure it:
+To enable remote access:
 
 ```rust
 let mut options = ViewerOptions::inline_html("<h1>Hello</h1>");
 options.behaviour.allow_remote_content = true;
 options.behaviour.allow_external_navigation = true;
-options.behaviour.allowed_domains = Some(vec!["example.com".to_string()]);
+options.behaviour.allowed_domains = Some(
+    vec!["example.com".to_string()]
+);
 ```
+
+This design prevents accidental network access or data leakage.
+
+## Command-Line Interface
+
+The CLI is a thin wrapper around the same viewer.
+
+### Examples
+
+```bash
+html_view_cli html "<h1>Hello</h1>"
+html_view_cli file index.html
+html_view_cli dir ./dist
+html_view_cli url https://example.com
+```
+
+### Options
+
+```bash
+html_view_cli html "<h1>Custom</h1>" \
+  --width 800 \
+  --height 600 \
+  --title "My App" \
+  --timeout 10
+```
+
+## Project Structure
+
+This repository is a Cargo workspace:
+
+* `html_view`: Public Rust API
+* `html_view_shared`: Protocol and shared types
+* `html_view_app`: Tauri 2.0 viewer application
+* `html_view_cli`: Optional CLI frontend
+
+The API crate spawns the viewer and communicates via JSON files.
+
+## Building from Source
+
+```bash
+cargo build --workspace
+cargo install --path html_view_app
+```
+
+Note: the `html_view_app` is a Tauri application that bundles frontend assets; using `cargo install` in development may not include built frontend assets if they haven't been prepared. To reliably install the viewer from source, build the workspace (which runs the Tauri build step) and then install from the app path:
+
+```bash
+cargo build --workspace --release
+cargo install --path html_view_app
+# or from the workspace root:
+cargo install --path ./html_view_app
+```
+
+If you run into missing UI assets after `cargo install`, prefer building with `cargo build` (or the platform-appropriate bundling commands) and then use the produced binary from `target/release` or use your platform's packaging pipeline. On Linux, ensure `libwebkit2gtk` is installed before running the built app.
 
 ## Platform Requirements
 
 ### Linux
-Requires WebKitGTK. Install with:
+
+Requires WebKitGTK:
+
 ```bash
-# Ubuntu/Debian
 sudo apt install libwebkit2gtk-4.1-dev
-
-# Fedora
 sudo dnf install webkit2gtk4.1-devel
-
-# Arch
 sudo pacman -S webkit2gtk-4.1
 ```
 
+### Run locally (Linux)
+
+After building, you can run the viewer directly from the `target` directory. Ensure the system WebKitGTK libraries are installed first (see above). Example:
+
+```bash
+# Build release binary
+cargo build -p html_view_app --release
+
+# Run the built binary with a sample config (create paths as needed)
+./target/release/html_view_app --config-path /tmp/sample_config.json --result-path /tmp/sample_result.json
+
+# The viewer will write the JSON result file when it exits.
+```
+
+If the binary fails to start due to missing frontend assets, prefer running the built binary from a development build (i.e. `cargo run -p html_view_app`) or use the packaged output created by your platform bundler.
+
 ### macOS
-No additional dependencies (uses system WKWebView).
+
+Uses the system WKWebView.
 
 ### Windows
-No additional dependencies (uses WebView2, automatically installed on Windows 11).
+
+Uses WebView2, available by default on Windows 11.
+
+## Troubleshooting
+
+### Viewer Not Found
+
+If the viewer cannot be located:
+
+```bash
+cargo install --path html_view_app
+```
+
+Or set the path manually:
+
+```bash
+export HTML_VIEW_APP_PATH=/path/to/html_view_app
+```
+
+The resolver checks, in order:
+
+1. Embedded build-time path
+2. `HTML_VIEW_APP_PATH`
+3. `~/.cargo/bin/html_view_app`
+4. Caller executable directory
+5. `target/debug` and `target/release`
 
 ## License
 
-MIT OR Apache-2.0
+MIT
 
 ## Contributing
 
-Contributions welcome! Please open an issue or PR.
+Contributions are welcome. See `CONTRIBUTING.md`.
 
-## Similar Projects
+## Acknowledgements
 
-- [tauri](https://tauri.app/) - Full application framework (html_view uses Tauri internally)
-- [web-view](https://github.com/Boscop/web-view) - Lightweight webview bindings
-
-## Acknowledgments
-
-Built with [Tauri 2.0](https://tauri.app/).
+Built using Tauri 2.0.

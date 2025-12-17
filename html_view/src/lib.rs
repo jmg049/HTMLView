@@ -64,6 +64,17 @@ pub fn show<S: Into<String>>(html: S) -> Result<(), ViewerError> {
     }
 }
 
+
+pub fn show_with_options<S: Into<String>>(html: S, window_options: WindowOptions) -> Result<(), ViewerError> {
+    let mut options = ViewerOptions::inline_html(html);
+    options.window = window_options;
+
+    match open(options)? {
+        ViewerResult::Blocking(_status) => Ok(()),
+        ViewerResult::NonBlocking(_) => unreachable!("inline_html uses Blocking mode"),
+    }
+}
+
 /// Open a viewer window with the given options.
 ///
 /// Returns either a blocking result with the exit status or a non-blocking

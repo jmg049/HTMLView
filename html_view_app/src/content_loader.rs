@@ -24,13 +24,18 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
             if let Some(toolbar) = &toolbar_html {
                 // Read file, inject base and toolbar
                 let content = std::fs::read_to_string(path).context("Failed to read HTML file")?;
-                let base_url = format!("file://{}/", path.parent().unwrap_or(path).display());
-                let final_html = inject_into_html(&content, toolbar, Some(&base_url));
+                let base_path = path
+                    .parent()
+                    .map(|p| p.to_path_buf())
+                    .unwrap_or_else(|| std::path::PathBuf::from("."));
+                let base_url = Url::from_file_path(&base_path)
+                    .map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let final_html = inject_into_html(&content, toolbar, Some(base_url.as_str()));
                 load_inline_html(window, &final_html)?;
             } else {
                 // Use file URL to ensure relative paths (images, css) work correctly
-                let url_str = format!("file://{}", path.display());
-                window.navigate(Url::parse(&url_str)?).context("Failed to navigate to local file")?;
+                let url = Url::from_file_path(path).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                window.navigate(url).context("Failed to navigate to local file")?;
             }
         }
         ViewerContent::AppDir { root, entry } => {
@@ -39,12 +44,12 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
 
             if let Some(toolbar) = &toolbar_html {
                 let content = std::fs::read_to_string(&full_path).context("Failed to read app entry file")?;
-                let base_url = format!("file://{}/", root.display());
-                let final_html = inject_into_html(&content, toolbar, Some(&base_url));
+                let base_url = Url::from_file_path(root).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let final_html = inject_into_html(&content, toolbar, Some(base_url.as_str()));
                 load_inline_html(window, &final_html)?;
             } else {
-                 let url_str = format!("file://{}", full_path.display());
-                 window.navigate(Url::parse(&url_str)?).context("Failed to navigate to app entry file")?;
+                let url = Url::from_file_path(&full_path).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                window.navigate(url).context("Failed to navigate to app entry file")?;
             }
         }
         ViewerContent::RemoteUrl { url } => {
@@ -95,15 +100,43 @@ fn load_inline_html(window: &WebviewWindow, html: &str) -> Result<()> {
     let encoded = general_purpose::STANDARD.encode(html.as_bytes());
     let data_url = format!("data:text/html;base64,{}", encoded);
 
-    window
-        .navigate(Url::parse(&data_url)?)
-        .context("Failed to load HTML")?;
+    // Try to parse the data URL. Some embedded WebView implementations may
+    // reject extremely long data URLs or have parsing quirks; in that case
+    // fall back to writing the HTML using `eval` and `atob` which is more
+    // robust for large payloads.
+    match Url::parse(&data_url) {
+        Ok(url) => {
+            window
+                .navigate(url)
+                .context("Failed to load HTML")?;
+        }
+        Err(_) => {
+            // Use JavaScript to write the decoded HTML into the document.
+            let js = format!(
+                "document.open();document.write(atob(\"{}\"));document.close();",
+                encoded
+            );
+            window
+                .eval(&js)
+                .context("Failed to load HTML via eval fallback")?;
+        }
+    }
 
     Ok(())
 }
 
 /// Generate HTML for the custom toolbar.
 fn generate_toolbar_html(options: &ToolbarOptions) -> String {
+    // NOTE: The generated toolbar uses inline `onclick` handlers that call
+    // `window.__TAURI__.invoke('toolbar_action', { action: '...' })` to send
+    // commands to the Rust backend. Tauri's recommended frontend API is
+    // `@tauri-apps/api` (which exposes an `invoke` function), but in many
+    // packaging setups `window.__TAURI__` is available as a backwards
+    // compatibility shim. If you change your frontend bundling or update
+    // Tauri, ensure the `invoke` function is reachable from the global
+    // `window` object, or adapt these handlers to use your frontend's
+    // API (e.g. `import { invoke } from '@tauri-apps/api'`).
+
     let title = options.title_text.as_deref().unwrap_or("HTML Viewer");
     let bg_color = options.background_color.as_deref().unwrap_or("#f0f0f0");
     let text_color = options.text_color.as_deref().unwrap_or("#333333");

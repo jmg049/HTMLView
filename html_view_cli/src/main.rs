@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 use html_view::{
     BehaviourOptions, EnvironmentOptions, ViewerContent, ViewerOptions, WindowOptions,
 };
-use std::path::PathBuf;
+use std::{fmt::Display, path::PathBuf};
 use url::Url;
 
 #[derive(Parser)]
@@ -81,21 +81,39 @@ enum Commands {
     },
 }
 
+impl Display for Commands {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Commands::Html { html } => write!(f, "Html Command with html length: {}", html.len()),
+            Commands::File { path } => write!(f, "File Command with path: {}", path.display()),
+            Commands::Dir { root, entry } => write!(
+                f,
+                "Dir Command with root: {} and entry: {}",
+                root.display(),
+                entry.as_deref().unwrap_or("index.html")
+            ),
+            Commands::Url { url } => write!(f, "Url Command with url: {}", url),
+        }
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Create base options based on command
-    let content = match cli.command {
+    let content = match &cli.command {
         Commands::Html { html } => ViewerContent::InlineHtml {
-            html,
+            html: html.to_string(),
             base_dir: None,
         },
-        Commands::File { path } => ViewerContent::LocalFile { path },
-        Commands::Dir { root, entry } => ViewerContent::AppDir { root, entry },
+        Commands::File { path } => ViewerContent::LocalFile { path : path.to_path_buf() },
+        Commands::Dir { root, entry } => ViewerContent::AppDir { root: root.to_path_buf(), entry: entry.to_owned() },
         Commands::Url { url } => ViewerContent::RemoteUrl {
             url: Url::parse(&url)?,
         },
     };
+
+    println!("{}", cli.command);
 
     // Build window options
     let mut window = WindowOptions::default();
