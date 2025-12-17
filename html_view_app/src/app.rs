@@ -17,9 +17,9 @@ pub fn run_app(request: ViewerRequest) -> Result<ViewerExitStatus> {
     let _request_for_timeout = request_arc.clone();
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_cli::init())
+        // .plugin(tauri_plugin_dialog::init())
+        // .plugin(tauri_plugin_notification::init())
+        // .plugin(tauri_plugin_cli::init())
         .invoke_handler(tauri::generate_handler![
             toolbar_action,
             show_notification,

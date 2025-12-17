@@ -16,6 +16,7 @@ base64 = "0.22"
 tauri-plugin-dialog = "2.4.2"
 tauri-plugin-notification = "2.3.3"
 tauri-plugin-cli = "2.4.1"
+gtk = "0.18"
 
 [build-dependencies]
 tauri-build = "2.0"

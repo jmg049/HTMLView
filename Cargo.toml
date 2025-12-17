@@ -5,7 +5,7 @@ members = [
     "html_view_app",
     "html_view_cli",
 ]
-resolver = "2"
+resolver = "3"
 
 [workspace.package]
 version = "0.1.0"
@@ -22,7 +22,6 @@ thiserror = "2.0.12"
 anyhow = "1.0.100"
 tauri = "2.0"
 clap = { version = "4.4", features = ["derive"] }
-
 
 [profile.release]
 opt-level = 3

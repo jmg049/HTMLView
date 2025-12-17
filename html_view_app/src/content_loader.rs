@@ -28,13 +28,18 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
                     .parent()
                     .map(|p| p.to_path_buf())
                     .unwrap_or_else(|| std::path::PathBuf::from("."));
-                let base_url = Url::from_file_path(&base_path)
-                    .map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let abs_path = std::fs::canonicalize(&base_path)
+                    .context("Failed to canonicalize base path")?;
+                let base_url = Url::from_file_path(&abs_path)
+                    .map_err(|_| anyhow::anyhow!("Invalid file path {:?}", abs_path))?;
                 let final_html = inject_into_html(&content, toolbar, Some(base_url.as_str()));
                 load_inline_html(window, &final_html)?;
             } else {
                 // Use file URL to ensure relative paths (images, css) work correctly
-                let url = Url::from_file_path(path).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let abs_path = std::fs::canonicalize(path)
+                    .context("Failed to canonicalize file path")?;
+                let url = Url::from_file_path(&abs_path)
+                    .map_err(|_| anyhow::anyhow!("Invalid file path {:?}", abs_path))?;
                 window.navigate(url).context("Failed to navigate to local file")?;
             }
         }
@@ -44,11 +49,15 @@ pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<(
 
             if let Some(toolbar) = &toolbar_html {
                 let content = std::fs::read_to_string(&full_path).context("Failed to read app entry file")?;
+                let root = std::fs::canonicalize(root).context("Failed to canonicalize app root")?;
                 let base_url = Url::from_file_path(root).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
                 let final_html = inject_into_html(&content, toolbar, Some(base_url.as_str()));
                 load_inline_html(window, &final_html)?;
             } else {
-                let url = Url::from_file_path(&full_path).map_err(|_| anyhow::anyhow!("Invalid file path"))?;
+                let abs_path = std::fs::canonicalize(&full_path)
+                    .context("Failed to canonicalize app entry file path")?;
+                let url = Url::from_file_path(&abs_path)
+                    .map_err(|_| anyhow::anyhow!("Invalid file path {:?}", abs_path))?;
                 window.navigate(url).context("Failed to navigate to app entry file")?;
             }
         }
