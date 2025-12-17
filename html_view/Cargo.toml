@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
+description = "A Rust library for rendering HTML content in a native tauri application."
+documentation = "https://github.com/jmg049/HTMLView"
+repository = "https://github.com/jmg049/HTMLView"
+keywords = ["html", "tauri", "gui", "rendering"]
+categories = ["gui"]
 
 [dependencies]
 html_view_shared = { version = "*", git = "https://github.com/jmg049/HTMLView.git" }

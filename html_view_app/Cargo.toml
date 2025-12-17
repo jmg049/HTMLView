@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 
+description = "A Tauri-based desktop application for rendering HTML content."
+
 [dependencies]
 html_view_shared = { git = "https://github.com/jmg049/HTMLView.git" }
 tauri.workspace = true
