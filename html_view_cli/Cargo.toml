@@ -10,7 +10,7 @@ name = "html_view_cli"
 path = "src/main.rs"
 
 [dependencies]
-html_view = { path = "../html_view" }
+html_view = { git = "https://github.com/jmg049/HTMLView.git" }
 clap.workspace = true
 anyhow.workspace = true
 url.workspace = true
