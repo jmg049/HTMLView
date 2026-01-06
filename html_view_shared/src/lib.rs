@@ -8,6 +8,14 @@ use std::path::PathBuf;
 use url::Url;
 use uuid::Uuid;
 
+/// Protocol version for compatibility checking between library and viewer.
+///
+/// This follows semantic versioning:
+/// - Major version: Breaking changes to the protocol
+/// - Minor version: Backward-compatible additions
+/// - Patch version: Bug fixes that don't affect the protocol
+pub const PROTOCOL_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 /// Complete request structure sent to the Tauri viewer application.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ViewerRequest {
@@ -28,6 +36,10 @@ pub struct ViewerRequest {
 
     /// Dialog configuration.
     pub dialog: DialogOptions,
+
+    /// Optional path to command file for runtime updates.
+    #[serde(default)]
+    pub command_path: Option<PathBuf>,
 }
 
 /// The type of content to display in the viewer.
@@ -104,7 +116,11 @@ pub struct WindowOptions {
     pub always_on_top: bool,
 
     /// Window theme ("light", "dark", or "system").
+    #[deprecated(since = "0.1.1", note = "Use theme_enum instead")]
     pub theme: Option<String>,
+
+    /// Window theme preference (type-safe enum).
+    pub theme_enum: Option<WindowTheme>,
 
     /// Background color in hex format (e.g., "#FFFFFF").
     pub background_color: Option<String>,
@@ -127,7 +143,9 @@ impl Default for WindowOptions {
             decorations: true,
             transparent: false,
             always_on_top: false,
+            #[allow(deprecated)]
             theme: None,
+            theme_enum: None,
             background_color: None,
             toolbar: ToolbarOptions::default(),
         }
@@ -135,8 +153,7 @@ impl Default for WindowOptions {
 }
 
 /// Toolbar configuration options.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ToolbarOptions {
     /// Whether to show the custom toolbar.
     pub show: bool,
@@ -154,7 +171,6 @@ pub struct ToolbarOptions {
     pub buttons: Vec<ToolbarButton>,
 }
 
-
 /// A button in the custom toolbar.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolbarButton {
@@ -168,9 +184,21 @@ pub struct ToolbarButton {
     pub icon: Option<String>,
 }
 
+/// Window theme options.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[serde(rename_all = "lowercase")]
+pub enum WindowTheme {
+    /// Light theme.
+    Light,
+    /// Dark theme.
+    Dark,
+    /// System theme (follows OS preference).
+    #[default]
+    System,
+}
+
 /// Behaviour and security configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct BehaviourOptions {
     /// Whether navigation away from the initial content is allowed.
     pub allow_external_navigation: bool,
@@ -189,10 +217,8 @@ pub struct BehaviourOptions {
     pub allow_notifications: bool,
 }
 
-
 /// Dialog configuration options.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct DialogOptions {
     /// Whether file dialogs are allowed.
     pub allow_file_dialogs: bool,
@@ -201,10 +227,8 @@ pub struct DialogOptions {
     pub allow_message_dialogs: bool,
 }
 
-
 /// Environment and runtime configuration.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct EnvironmentOptions {
     /// Optional working directory for resolving relative paths.
     pub working_dir: Option<PathBuf>,
@@ -212,7 +236,6 @@ pub struct EnvironmentOptions {
     /// Optional timeout in seconds after which the viewer will auto-close.
     pub timeout_seconds: Option<u64>,
 }
-
 
 /// Exit status returned by the viewer application.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -222,6 +245,16 @@ pub struct ViewerExitStatus {
 
     /// The reason the viewer exited.
     pub reason: ViewerExitReason,
+
+    /// The protocol version of the viewer application.
+    /// This is used to check compatibility with the library.
+    #[serde(default = "default_version")]
+    pub viewer_version: String,
+}
+
+/// Default version for backward compatibility with old viewers that don't report version.
+fn default_version() -> String {
+    "0.0.0".to_string()
 }
 
 /// The reason the viewer exited.
@@ -239,4 +272,28 @@ pub enum ViewerExitReason {
         /// Error message.
         message: String,
     },
+}
+
+/// Commands that can be sent to a running viewer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum ViewerCommand {
+    /// Refresh the displayed content.
+    Refresh {
+        /// Sequence number for command ordering.
+        seq: u64,
+        /// New content to display.
+        content: ViewerContent,
+    },
+}
+
+/// Response to a viewer command.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ViewerCommandResponse {
+    /// Sequence number matching the command.
+    pub seq: u64,
+    /// Whether the command succeeded.
+    pub success: bool,
+    /// Error message if unsuccessful.
+    pub error: Option<String>,
 }

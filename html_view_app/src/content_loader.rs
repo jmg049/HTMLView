@@ -4,7 +4,6 @@ use tauri::WebviewWindow;
 use url::Url;
 
 /// Load content into the window based on ViewerContent type.
-/// Load content into the window based on ViewerContent type.
 pub fn load_content(window: &WebviewWindow, request: &ViewerRequest) -> Result<()> {
     let toolbar_html = if request.window.toolbar.show {
         Some(generate_toolbar_html(&request.window.toolbar))

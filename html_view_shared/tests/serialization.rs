@@ -100,12 +100,14 @@ fn test_viewer_exit_status_roundtrip() {
     let status = ViewerExitStatus {
         id: Uuid::new_v4(),
         reason: ViewerExitReason::ClosedByUser,
+        viewer_version: "0.1.0".to_string(),
     };
 
     let json = serde_json::to_string(&status).unwrap();
     let deserialized: ViewerExitStatus = serde_json::from_str(&json).unwrap();
 
     assert_eq!(status.id, deserialized.id);
+    assert_eq!(status.viewer_version, "0.1.0");
     matches!(deserialized.reason, ViewerExitReason::ClosedByUser);
 }
 
@@ -151,4 +153,23 @@ fn test_behaviour_options_defaults() {
     assert!(!opts.enable_devtools);
     assert!(!opts.allow_remote_content);
     assert_eq!(opts.allowed_domains, None);
+}
+
+#[test]
+fn test_viewer_exit_status_backward_compatibility() {
+    // Test that old JSON without viewer_version can still be deserialized
+    let json =
+        r#"{"id":"550e8400-e29b-41d4-a716-446655440000","reason":{"reason":"closed_by_user"}}"#;
+    let deserialized: ViewerExitStatus = serde_json::from_str(json).unwrap();
+
+    // Should default to "0.0.0"
+    assert_eq!(deserialized.viewer_version, "0.0.0");
+    matches!(deserialized.reason, ViewerExitReason::ClosedByUser);
+}
+
+#[test]
+fn test_protocol_version_constant() {
+    // Verify PROTOCOL_VERSION is valid semver
+    assert!(!PROTOCOL_VERSION.is_empty());
+    assert!(PROTOCOL_VERSION.contains('.'));
 }

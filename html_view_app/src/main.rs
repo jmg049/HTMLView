@@ -6,7 +6,7 @@ mod app;
 mod content_loader;
 
 use clap::Parser;
-use html_view_shared::{ViewerExitReason, ViewerExitStatus, ViewerRequest};
+use html_view_shared::{PROTOCOL_VERSION, ViewerExitReason, ViewerExitStatus, ViewerRequest};
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
     // Test/CI shortcut: when `HTML_VIEW_CI_FAKE=1` is set, skip launching
     // the real Tauri UI (which requires frontend assets and a display) and
     // instead simulate a viewer run. This allows CI to execute the binary
-    // in headless environments for smoke tests.
+    // in headless environments for quick testing.
     if std::env::var("HTML_VIEW_CI_FAKE").is_ok() {
         use std::thread::sleep;
         use std::time::Duration;
@@ -42,6 +42,7 @@ fn main() -> anyhow::Result<()> {
             let exit_status = ViewerExitStatus {
                 id: request.id,
                 reason: html_view_shared::ViewerExitReason::TimedOut,
+                viewer_version: PROTOCOL_VERSION.to_string(),
             };
 
             let result_json = serde_json::to_string_pretty(&exit_status)?;
@@ -52,6 +53,7 @@ fn main() -> anyhow::Result<()> {
             let exit_status = ViewerExitStatus {
                 id: request.id,
                 reason: html_view_shared::ViewerExitReason::ClosedByUser,
+                viewer_version: PROTOCOL_VERSION.to_string(),
             };
             let result_json = serde_json::to_string_pretty(&exit_status)?;
             std::fs::write(&args.result_path, result_json)?;
@@ -69,6 +71,7 @@ fn main() -> anyhow::Result<()> {
                 reason: ViewerExitReason::Error {
                     message: e.to_string(),
                 },
+                viewer_version: PROTOCOL_VERSION.to_string(),
             }
         }
     };

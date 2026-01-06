@@ -27,6 +27,14 @@ pub enum ViewerError {
     #[error("viewer timed out")]
     Timeout,
 
+    /// Version mismatch between library and viewer.
+    #[error("version mismatch: library v{library}, viewer v{viewer}\n{suggestion}")]
+    VersionMismatch {
+        library: String,
+        viewer: String,
+        suggestion: String,
+    },
+
     /// An I/O error occurred.
     #[error("I/O error: {0}")]
     IoError(#[from] std::io::Error),
@@ -34,6 +42,18 @@ pub enum ViewerError {
     /// A serialization error occurred.
     #[error("serialization error: {0}")]
     SerdeError(String),
+
+    /// Command timed out waiting for response.
+    #[error("command timed out after {timeout_secs}s (seq: {seq})")]
+    CommandTimeout { seq: u64, timeout_secs: u64 },
+
+    /// Command execution failed.
+    #[error("command failed: {0}")]
+    CommandFailed(String),
+
+    /// Refresh not supported (old viewer or wrong mode).
+    #[error("refresh not supported: {0}")]
+    RefreshNotSupported(String),
 }
 
 impl Clone for ViewerError {
@@ -45,10 +65,25 @@ impl Clone for ViewerError {
             ViewerError::ResultReadFailed(err) => ViewerError::ResultReadFailed(err.clone()),
             ViewerError::InvalidResponse(err) => ViewerError::InvalidResponse(err.clone()),
             ViewerError::Timeout => ViewerError::Timeout,
+            ViewerError::VersionMismatch {
+                library,
+                viewer,
+                suggestion,
+            } => ViewerError::VersionMismatch {
+                library: library.clone(),
+                viewer: viewer.clone(),
+                suggestion: suggestion.clone(),
+            },
             ViewerError::IoError(err) => {
                 ViewerError::IoError(std::io::Error::new(err.kind(), err.to_string()))
             }
             ViewerError::SerdeError(err) => ViewerError::SerdeError(err.to_string()),
+            ViewerError::CommandTimeout { seq, timeout_secs } => ViewerError::CommandTimeout {
+                seq: *seq,
+                timeout_secs: *timeout_secs,
+            },
+            ViewerError::CommandFailed(err) => ViewerError::CommandFailed(err.clone()),
+            ViewerError::RefreshNotSupported(err) => ViewerError::RefreshNotSupported(err.clone()),
         }
     }
 }

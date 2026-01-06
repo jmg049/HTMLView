@@ -1,4 +1,4 @@
-# Contributing to audio_samples
+# Contributing to HTMLView
 
 ## Contributions
 
@@ -10,6 +10,8 @@ welcome. For pull requests, please consider:
 * Documentation and tests are required.
 
 ## Usage of AI Tools
+
+> NOTE: This has been taken from the CONTRIBUTING.md file of the [audio_samples](https://github.com/jmg049/audio_samples) project. The comments below are reflective of the usage of AI in HTMLView.
 
 Since late 2022 there has been a rapid expansion of AI-based tooling for writing and interacting with code. Large Language Models such as ChatGPT, Gemini, and Claude allow users to query codebases, debug issues, discuss architectural ideas, and even generate tests or refactor modules. Some providers now offer agentic variants that execute actions, gather results, and iteratively update their own plan in response to intermediate outputs.
 

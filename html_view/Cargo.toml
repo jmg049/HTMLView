@@ -11,7 +11,7 @@ keywords = ["html", "tauri", "gui", "rendering"]
 categories = ["gui"]
 
 [dependencies]
-html_view_shared = { version = "0.1.0" }
+html_view_shared = { version = "0.2.0", path = "../html_view_shared" }
 uuid.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
@@ -19,3 +19,15 @@ url.workspace = true
 
 [dev-dependencies]
 tempfile = "3.5"
+criterion = "0.8.1"
+
+[[bench]]
+name = "viewer_benchmarks"
+harness = false
+
+[features]
+default = []
+bundled = ["ureq"]  # Optional: automatically download pre-built binary
+
+[build-dependencies]
+ureq = { version = "2.9", optional = true, features = ["tls"], default-features = false }
