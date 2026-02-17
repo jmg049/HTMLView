@@ -4,6 +4,7 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
+description = "A command-line interface for HTMLView"
 
 [[bin]]
 name = "html_view_cli"
