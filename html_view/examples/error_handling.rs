@@ -114,16 +114,17 @@ fn handle_viewer_error(err: ViewerError) {
         }
         ViewerError::CommandTimeout { seq, timeout_secs } => {
             eprintln!(" Error: Command timeout error");
-            eprintln!(" Details: seq = {}, timeout_secs = {}",seq, timeout_secs);
-        },
+            eprintln!(" Details: seq = {}, timeout_secs = {}", seq, timeout_secs);
+        }
         ViewerError::CommandFailed(msg) => {
             eprintln!(" Error: Command failed error");
             eprintln!(" Details: {}", msg)
-        },
+        }
         ViewerError::RefreshNotSupported(msg) => {
             eprintln!(" Error: Refresh not supported error");
             eprintln!(" Details: {}", msg)
-        },}
+        }
+    }
 }
 
 /// Demonstrate error handling in non-blocking mode

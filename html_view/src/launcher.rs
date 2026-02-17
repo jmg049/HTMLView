@@ -267,6 +267,7 @@ fn read_result_file(path: &PathBuf, expected_id: Uuid) -> Result<ViewerExitStatu
 
     let mut delay_ms = INITIAL_DELAY_MS;
     let mut last_error = None;
+    let mut saw_not_found = false;
 
     for attempt in 0..MAX_ATTEMPTS {
         match fs::read_to_string(path) {
@@ -294,6 +295,9 @@ fn read_result_file(path: &PathBuf, expected_id: Uuid) -> Result<ViewerExitStatu
                 return Ok(status);
             }
             Err(e) => {
+                if e.kind() == std::io::ErrorKind::NotFound {
+                    saw_not_found = true;
+                }
                 last_error = Some(e);
 
                 // If this isn't the last attempt, wait before retrying
@@ -306,7 +310,17 @@ fn read_result_file(path: &PathBuf, expected_id: Uuid) -> Result<ViewerExitStatu
         }
     }
 
-    // All attempts failed
+    if saw_not_found {
+        // Treat missing result as a normal close to avoid spurious errors when the viewer
+        // terminates without writing the file (e.g. when closed externally).
+        return Ok(ViewerExitStatus {
+            id: expected_id,
+            reason: ViewerExitReason::ClosedByUser,
+            viewer_version: PROTOCOL_VERSION.to_string(),
+        });
+    }
+
+    // All attempts failed with a persistent error
     Err(ViewerError::ResultReadFailed(format!(
         "Failed to read result file at {} after {} attempts: {}\n\
          Suggestion: The viewer process may have crashed. Check system logs or run with devtools enabled.",

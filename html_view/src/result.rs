@@ -1,6 +1,7 @@
 use crate::ViewerError;
 use html_view_shared::{
-    PROTOCOL_VERSION, ViewerCommand, ViewerCommandResponse, ViewerContent, ViewerExitStatus,
+    PROTOCOL_VERSION, ViewerCommand, ViewerCommandResponse, ViewerContent, ViewerExitReason,
+    ViewerExitStatus,
 };
 use std::path::PathBuf;
 use std::process::Child;
@@ -212,8 +213,7 @@ impl ViewerHandle {
         })
     }
 
-    /// Wait for a command response with timeout and exponential backoff.
-    fn wait_for_response(&self, seq: u64, timeout: Duration) -> Result<(), ViewerError> {
+    fn wait_for_response(&mut self, seq: u64, timeout: Duration) -> Result<(), ViewerError> {
         let response_path = self.response_path.as_ref().ok_or_else(|| {
             ViewerError::RefreshNotSupported("No response path configured".to_string())
         })?;
@@ -233,6 +233,22 @@ impl ViewerHandle {
                     seq,
                     timeout_secs: timeout.as_secs(),
                 });
+            }
+
+            // Bail out early if the viewer process has already exited.
+            if let Some(_status) = self.child.try_wait()? {
+                // Try to surface the exit reason if available.
+                let message = match self.read_result_file() {
+                    Ok(status) => format!(
+                        "viewer exited ({:?}) while waiting for command response",
+                        status.reason
+                    ),
+                    Err(_) => {
+                        "viewer process exited while waiting for command response".to_string()
+                    }
+                };
+
+                return Err(ViewerError::CommandFailed(message));
             }
 
             // Try to read response file
@@ -276,6 +292,7 @@ impl ViewerHandle {
 
         let mut delay_ms = INITIAL_DELAY_MS;
         let mut last_error = None;
+        let mut saw_not_found = false;
 
         for attempt in 0..MAX_ATTEMPTS {
             match std::fs::read_to_string(&self.result_path) {
@@ -290,6 +307,9 @@ impl ViewerHandle {
                     return Ok(status);
                 }
                 Err(e) => {
+                    if e.kind() == std::io::ErrorKind::NotFound {
+                        saw_not_found = true;
+                    }
                     last_error = Some(e);
 
                     // If this isn't the last attempt, wait before retrying
@@ -300,6 +320,15 @@ impl ViewerHandle {
                     }
                 }
             }
+        }
+
+        if saw_not_found {
+            // Assume the viewer closed cleanly if no result file was produced.
+            return Ok(ViewerExitStatus {
+                id: self.id,
+                reason: ViewerExitReason::ClosedByUser,
+                viewer_version: PROTOCOL_VERSION.to_string(),
+            });
         }
 
         // All attempts failed

@@ -488,9 +488,9 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for gui
 
 ## License
 
-This project is dual-licensed under:
+This project is licensed under:
 
-- MIT License ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+- MIT License ([LICENSE-MIT](LICENSE-MIT)
 
 ## Acknowledgements
 

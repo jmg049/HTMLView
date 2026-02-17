@@ -15,6 +15,7 @@ fn test_viewer_request_roundtrip() {
         behaviour: BehaviourOptions::default(),
         environment: EnvironmentOptions::default(),
         dialog: DialogOptions::default(),
+        command_path: None,
     };
 
     let json = serde_json::to_string(&request).unwrap();

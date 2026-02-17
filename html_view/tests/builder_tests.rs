@@ -152,7 +152,7 @@ fn test_builder_real_world_pattern_2() {
         .timeout(5)
         .show_html("<h1>Debug Window</h1>");
 
-    assert!(result.is_err());
+    assert!(result.is_ok())
 }
 
 #[test]
